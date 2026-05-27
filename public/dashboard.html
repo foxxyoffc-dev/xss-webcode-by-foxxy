@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard XSS Hunter</title>
+    <title>XSS Hunter – Dashboard Trigger</title>
     <style>
         body {
-            font-family: monospace;
             background: #0a0a0a;
             color: #00ff00;
+            font-family: monospace;
             padding: 20px;
         }
         .container {
@@ -16,7 +16,6 @@
             margin: 0 auto;
         }
         h1 {
-            color: #00ff00;
             border-bottom: 1px solid #00ff00;
             display: inline-block;
         }
@@ -29,27 +28,23 @@
             border: 1px solid #333;
             padding: 8px;
             text-align: left;
-            vertical-align: top;
             font-size: 12px;
+            vertical-align: top;
         }
         th {
             background: #1a1a1a;
-            color: #00ff00;
-        }
-        tr:hover {
-            background: #1a1a2e;
         }
         .marker {
             color: #ffaa00;
         }
-        .refresh-btn {
+        button {
             background: #00ff00;
             color: #000;
-            padding: 8px 16px;
             border: none;
+            padding: 8px 16px;
             cursor: pointer;
-            margin-bottom: 20px;
             font-weight: bold;
+            margin-bottom: 20px;
         }
         .note {
             color: #888;
@@ -60,25 +55,27 @@
 <body>
 <div class="container">
     <h1>📡 XSS Hunter Dashboard</h1>
-    <button class="refresh-btn" onclick="loadTriggers()">🔄 Refresh</button>
+    <button onclick="loadTriggers()">🔄 Refresh</button>
     <div id="triggersTable">Loading...</div>
-    <div class="note">Data diambil dari Upstash Redis (100 trigger terakhir). Pastikan API endpoint /api/triggers sudah aktif.</div>
+    <div class="note">Data diambil dari Redis (100 trigger terakhir).</div>
 </div>
 
 <script>
     async function loadTriggers() {
+        const container = document.getElementById('triggersTable');
+        container.innerHTML = '<div>Loading...</div>';
         try {
             const res = await fetch('/api/triggers');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
             if (!data.triggers || data.triggers.length === 0) {
-                document.getElementById('triggersTable').innerHTML = '<p>Belum ada trigger XSS. Kirim payload dulu!</p>';
+                container.innerHTML = '<p>Belum ada trigger. Kirim payload XSS dulu!</p>';
                 return;
             }
-            let html = `<table>
-                <tr><th>ID</th><th>Marker</th><th>URL</th><th>Cookies</th><th>IP</th><th>User-Agent</th><th>Waktu</th></tr>`;
+            let html = `<tr>
+                <tr><th>Marker</th><th>URL</th><th>Cookies</th><th>IP</th><th>User-Agent</th><th>Waktu</th></tr>`;
             for (let t of data.triggers) {
                 html += `<tr>
-                    <td>${t.id || '-'}</td>
                     <td class="marker">${escapeHtml(t.marker)}</td>
                     <td style="word-break:break-all;">${escapeHtml(t.url)}</td>
                     <td style="max-width:200px; overflow-x:auto;">${escapeHtml(t.cookies)}</td>
@@ -88,11 +85,12 @@
                 </tr>`;
             }
             html += `</table>`;
-            document.getElementById('triggersTable').innerHTML = html;
+            container.innerHTML = html;
         } catch (err) {
-            document.getElementById('triggersTable').innerHTML = `<p style="color:red;">Gagal memuat: ${err.message}<br>Pastikan endpoint /api/triggers sudah di-deploy.</p>`;
+            container.innerHTML = `<p style="color:red;">Gagal memuat data: ${err.message}<br>Pastikan file /api/triggers sudah ada dan Redis terkonfigurasi.</p>`;
         }
     }
+
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, function(m) {
@@ -102,6 +100,7 @@
             return m;
         });
     }
+
     loadTriggers();
     setInterval(loadTriggers, 15000);
 </script>
