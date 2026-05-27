@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XSS Hunter Dashboard</title>
+  <style>
+    body { background: #0a0a0a; color: #0f0; font-family: monospace; padding: 20px; }
+    button { background: #0f0; color: #000; border: none; padding: 10px 20px; cursor: pointer; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #333; padding: 8px; text-align: left; vertical-align: top; }
+    .marker { color: #ffaa00; }
+    .error { color: #ff4444; }
+  </style>
+</head>
+<body>
+<h1>📡 XSS Hunter Dashboard</h1>
+<button onclick="loadTriggers()">🔄 Refresh</button>
+<div id="triggers">Loading...</div>
+
+<script>
+  async function loadTriggers() {
+    const container = document.getElementById('triggers');
+    container.innerHTML = '<p>Mengambil data dari server...</p>';
+    try {
+      const response = await fetch('/api/triggers');
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+
+      if (!data.triggers || data.triggers.length === 0) {
+        container.innerHTML = '<p>Belum ada trigger. Kirim payload XSS dulu!</p>';
+        return;
+      }
+
+      let html = '<table><tr><th>Marker</th><th>URL</th><th>Cookies</th><th>IP</th><th>User-Agent</th><th>Waktu</th></tr>';
+      for (let t of data.triggers) {
+        html += `<tr>
+          <td class="marker">${escapeHtml(t.marker)}</td>
+          <td style="word-break:break-all;">${escapeHtml(t.url)}</td>
+          <td>${escapeHtml(t.cookies)}</td>
+          <td>${escapeHtml(t.ip)}</td>
+          <td>${escapeHtml(t.userAgent)}</td>
+          <td>${new Date(t.timestamp).toLocaleString()}</td>
+        </tr>`;
+      }
+      html += '</table>';
+      container.innerHTML = html;
+    } catch (err) {
+      container.innerHTML = `<p class="error">❌ Gagal memuat data: ${err.message}<br>Pastikan endpoint /api/triggers sudah aktif dan Redis terkonfigurasi.</p>`;
+    }
+  }
+
+  function escapeHtml(str) { return (str || '').replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
+  loadTriggers();
+  setInterval(loadTriggers, 15000);
+</script>
+</body>
+</html>
