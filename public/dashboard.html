@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard XSS Hunter</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #0a0a0a;
+            color: #00ff00;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #00ff00;
+            border-bottom: 1px solid #00ff00;
+            display: inline-block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #333;
+            padding: 8px;
+            text-align: left;
+            vertical-align: top;
+            font-size: 12px;
+        }
+        th {
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        tr:hover {
+            background: #1a1a2e;
+        }
+        .marker {
+            color: #ffaa00;
+        }
+        .refresh-btn {
+            background: #00ff00;
+            color: #000;
+            padding: 8px 16px;
+            border: none;
+            cursor: pointer;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .note {
+            color: #888;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📡 XSS Hunter Dashboard</h1>
+    <button class="refresh-btn" onclick="loadTriggers()">🔄 Refresh</button>
+    <div id="triggersTable">Loading...</div>
+    <div class="note">Data diambil dari Upstash Redis (100 trigger terakhir). Pastikan API endpoint /api/triggers sudah aktif.</div>
+</div>
+
+<script>
+    async function loadTriggers() {
+        try {
+            const res = await fetch('/api/triggers');
+            const data = await res.json();
+            if (!data.triggers || data.triggers.length === 0) {
+                document.getElementById('triggersTable').innerHTML = '<p>Belum ada trigger XSS. Kirim payload dulu!</p>';
+                return;
+            }
+            let html = `<table>
+                <tr><th>ID</th><th>Marker</th><th>URL</th><th>Cookies</th><th>IP</th><th>User-Agent</th><th>Waktu</th></tr>`;
+            for (let t of data.triggers) {
+                html += `<tr>
+                    <td>${t.id || '-'}</td>
+                    <td class="marker">${escapeHtml(t.marker)}</td>
+                    <td style="word-break:break-all;">${escapeHtml(t.url)}</td>
+                    <td style="max-width:200px; overflow-x:auto;">${escapeHtml(t.cookies)}</td>
+                    <td>${escapeHtml(t.ip)}</td>
+                    <td style="max-width:200px;">${escapeHtml(t.userAgent)}</td>
+                    <td>${new Date(t.timestamp).toLocaleString()}</td>
+                </tr>`;
+            }
+            html += `</table>`;
+            document.getElementById('triggersTable').innerHTML = html;
+        } catch (err) {
+            document.getElementById('triggersTable').innerHTML = `<p style="color:red;">Gagal memuat: ${err.message}<br>Pastikan endpoint /api/triggers sudah di-deploy.</p>`;
+        }
+    }
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    loadTriggers();
+    setInterval(loadTriggers, 15000);
+</script>
+</body>
+</html>
