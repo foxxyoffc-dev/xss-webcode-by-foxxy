@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "functions": {
+    "api/hook.js": {
+      "maxDuration": 10
+    },
+    "api/triggers.js": {
+      "maxDuration": 10
+    }
+  },
+  "routes": [
+    { "src": "/", "dest": "/public/index.html" },
+    { "src": "/dashboard.html", "dest": "/public/dashboard.html" },
+    { "src": "/api/(.*)", "dest": "/api/$1" }
+  ]
+}
